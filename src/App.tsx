@@ -21,7 +21,10 @@ function App() {
   const [title, setTitle] = useState('')
   const [dueAt, setDueAt] = useState(nowLocalDateTime())
   const [reminders, setReminders] = useState<Reminder[]>([])
-  const [permission, setPermission] = useState(Notification.permission)
+  const [permission, setPermission] = useState(
+    'Notification' in window ? Notification.permission : 'denied',
+  )
+  const [serviceWorkerReady, setServiceWorkerReady] = useState(false)
   const timers = useRef<Record<string, number>>({})
 
   useEffect(() => {
@@ -45,14 +48,14 @@ function App() {
       const dueDate = new Date(reminder.dueAt)
       const delay = dueDate.getTime() - Date.now()
       const timerId = window.setTimeout(() => {
-        triggerNotification(reminder)
+        void triggerNotification(reminder)
         setReminders((current) => current.filter((item) => item.id !== reminder.id))
       }, Math.max(delay, 0))
       timers.current[reminder.id] = timerId
 
       if (delay <= 0) {
         window.clearTimeout(timerId)
-        triggerNotification(reminder)
+        void triggerNotification(reminder)
         setReminders((current) => current.filter((item) => item.id !== reminder.id))
       }
     })
@@ -64,16 +67,12 @@ function App() {
   }, [reminders])
 
   useEffect(() => {
-    if (!('Notification' in window)) {
+    if (!('serviceWorker' in navigator)) {
       return
     }
 
-    if (permission === 'default') {
-      Notification.requestPermission().then((result) => {
-        setPermission(result)
-      })
-    }
-  }, [permission])
+    navigator.serviceWorker.ready.then(() => setServiceWorkerReady(true))
+  }, [])
 
   const sortedReminders = useMemo(
     () => [...reminders].sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime()),
@@ -120,6 +119,15 @@ function App() {
     Notification.requestPermission().then((result) => setPermission(result))
   }
 
+  const sendTestNotification = () => {
+    void triggerNotification({
+      id: `test-${Date.now()}`,
+      title: 'This is a test notification from the installed web app.',
+      dueAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    })
+  }
+
   return (
     <main className="app-shell">
       <section className="hero-card">
@@ -135,9 +143,18 @@ function App() {
             <strong>Notification</strong>
             <span>{permission === 'granted' ? 'Allowed' : permission === 'denied' ? 'Denied' : 'Ask to allow'}</span>
           </div>
+          <div className="status-pill">
+            <strong>Service worker</strong>
+            <span>{serviceWorkerReady ? 'Ready' : 'Starting'}</span>
+          </div>
           {permission !== 'granted' && (
             <button type="button" className="action-button" onClick={requestPermission}>
               Enable notifications
+            </button>
+          )}
+          {permission === 'granted' && (
+            <button type="button" className="action-button" onClick={sendTestNotification}>
+              Send test notification
             </button>
           )}
         </div>
@@ -206,20 +223,29 @@ function App() {
   )
 }
 
-function triggerNotification(reminder: Reminder) {
+async function triggerNotification(reminder: Reminder) {
   const title = 'Reminder'
   const body = reminder.title
   if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, {
+    const options: NotificationOptions & { vibrate?: number[] } = {
       body,
       tag: reminder.id,
-    })
+      icon: '/favicon.svg',
+      badge: '/favicon.svg',
+      vibrate: [200, 100, 200],
+      data: {
+        url: '/',
+      },
+    }
+
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.ready
+      await registration.showNotification(title, options)
+    } else {
+      new Notification(title, options)
+    }
   } else {
     alert(`Reminder: ${reminder.title}`)
-  }
-
-  if ('vibrate' in navigator) {
-    navigator.vibrate([200, 100, 200])
   }
 }
 
