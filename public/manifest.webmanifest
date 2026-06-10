@@ -1,6 +1,6 @@
 {
-  "name": "Notification Test",
-  "short_name": "Notify Test",
+  "name": "Agenda test",
+  "short_name": "Agenda",
   "description": "A minimal installed web app for testing Android notifications.",
   "start_url": "/",
   "scope": "/",
@@ -9,9 +9,9 @@
   "theme_color": "#081127",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/calendar.png",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
