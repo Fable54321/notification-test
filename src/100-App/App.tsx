@@ -1,3 +1,4 @@
+import { Outlet } from "react-router-dom"
 
 
 const App = () => {
@@ -6,6 +7,8 @@ const App = () => {
       <h2 className="hidden sr-only">agenda interactif
 
       </h2>
+
+      <Outlet />
     </article>
   )
 }
