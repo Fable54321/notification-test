@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useMemo, useState } from "react"
+import AddTaskToDate from "./AddTaskToDate"
 
 const Calendar = () => {
   const today = new Date()
@@ -7,6 +8,7 @@ const Calendar = () => {
   const [displayedDate, setDisplayedDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1),
   )
+  const [isAddTaskOpen, setIsAddTaskOpen] = useState(true)
 
   const currentMonth = displayedDate.getMonth()
   const currentYear = displayedDate.getFullYear()
@@ -67,6 +69,11 @@ const Calendar = () => {
     return [...emptyDays, ...monthDays, ...endEmptyDays]
   }, [currentYear, currentMonth])
 
+
+if (!isAddTaskOpen) {
+  
+
+
   return (
     <div className="grid grid-cols-7">
       <div className="col-span-7 mb-4 flex items-center justify-between">
@@ -118,6 +125,15 @@ const Calendar = () => {
       ))}
     </div>
   )
+}
+
+else {
+  return (
+    <AddTaskToDate />
+  )
+}
+
+
 }
 
 export default Calendar
