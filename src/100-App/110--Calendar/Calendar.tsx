@@ -10,6 +10,8 @@ const Calendar = () => {
   )
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(true)
 
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
   const currentMonth = displayedDate.getMonth()
   const currentYear = displayedDate.getFullYear()
 
@@ -116,12 +118,13 @@ if (!isAddTaskOpen) {
       ))}
 
       {calendarDays.map((date, index) => (
-        <div
+        <button
           key={index}
-          className="min-h-40 border border-gray-300 bg-white p-2"
+          className="min-h-40 border border-gray-300 bg-white p-2 flex items-start justify-start"
+          onClick={() => setSelectedDate(date)}
         >
           {date && <p>{date.getDate()}</p>}
-        </div>
+        </button>
       ))}
     </div>
   )
@@ -129,7 +132,7 @@ if (!isAddTaskOpen) {
 
 else {
   return (
-    <AddTaskToDate />
+    <AddTaskToDate onClose={() => setIsAddTaskOpen(false)} />
   )
 }
 
