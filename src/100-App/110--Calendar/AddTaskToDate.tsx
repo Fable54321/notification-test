@@ -163,11 +163,11 @@ const AddTaskToDate = ({
                   onClick={() => setSelectedIcon(value)}
                   className={`flex aspect-square items-center justify-center rounded-lg border p-3 transition ${
                     isSelected
-                      ? "border-secondary bg-secondary text-white"
+                      ? "border-secondary bg-white ring-2 ring-secondary"
                       : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                   }`}
                 >
-                  <TaskMarker icon={value} className="h-5 w-5" />
+                  <TaskMarker icon={value} className="h-6 w-6" />
                 </button>
               )
             })}

@@ -180,9 +180,8 @@ const handleAddTask = (task: CalendarTask) => {
               <span
                 key={task.id}
                 title="Tâche planifiée"
-                className="text-secondary"
               >
-                <TaskMarker icon={task.icon} className="h-4 w-4" />
+                <TaskMarker icon={task.icon} className="h-5 w-5" />
               </span>
             ))}
 
