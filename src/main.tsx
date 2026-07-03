@@ -6,6 +6,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import Calendar from './100-App/110--Calendar/Calendar.tsx'
 import { AuthProvider } from './Contexts/AuthContext.tsx'
 import ProtectedRoute from './Components/ProtectedRoute.tsx'
+import { AgendaProvider } from './Contexts/AgendaContext.tsx'
 
 
 
@@ -29,7 +30,9 @@ const router = createBrowserRouter([
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
+      <AgendaProvider>
     <RouterProvider router={router} />
+    </AgendaProvider>
     </AuthProvider>
   </StrictMode>,
 )

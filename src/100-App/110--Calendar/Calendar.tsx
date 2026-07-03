@@ -1,10 +1,11 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import whiteFlower from "../../assets/flower-alt.png"
 import greenFlower from "../../assets/flower_no_circle_transparent - Copy.png"
 import AddTaskToDate from "./AddTaskToDate"
 import TaskMarker from "./TaskMarker"
 import type { CalendarTask } from "../../types"
+import { useAgenda } from "../../Contexts/AgendaContext"
 
 const Calendar = () => {
   const today = new Date()
@@ -12,6 +13,15 @@ const Calendar = () => {
   const [displayedDate, setDisplayedDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1),
   )
+
+  const { tasks: agendaTasks, fetchAgendaMonth } = useAgenda()
+
+  useEffect(() => {
+    fetchAgendaMonth(displayedDate.getFullYear(), displayedDate.getMonth())
+  }, [displayedDate])
+
+
+  useEffect(() => {console.log(agendaTasks)},[agendaTasks])
 
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -147,7 +157,7 @@ const handleAddTask = (task: CalendarTask) => {
           <img
             src={whiteFlower}
             alt="white-flower"
-            className="absolute sm:bottom-0 sm:right-0 sm:w-12 sm:-rotate-25 opacity-50 w-8 left-1/2 -translate-x-1/2 -bottom-2"
+            className="absolute sm:bottom-0 sm:right-0 sm:translate-0 sm:left-auto sm:w-12 sm:-rotate-25 opacity-50 w-8 left-1/2 -translate-x-1/2 -bottom-2"
           />
         </div>
       ))}
@@ -200,7 +210,7 @@ const handleAddTask = (task: CalendarTask) => {
       <img
         src={greenFlower}
         alt="green-flower"
-        className="pointer-events-none absolute sm:bottom-0 bottom-1 sm:right-0 left-1/2 -translate-x-1/2 sm:w-100 w-60 sm:-rotate-25 opacity-30"
+        className="pointer-events-none absolute sm:bottom-0 bottom-1 sm:right-0 sm:left-auto sm:translate-0 left-1/2 -translate-x-1/2 sm:w-100 w-60 sm:-rotate-25 opacity-30"
       />
     </div>
   )
