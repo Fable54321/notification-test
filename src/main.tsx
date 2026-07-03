@@ -7,6 +7,7 @@ import Calendar from './100-App/110--Calendar/Calendar.tsx'
 import { AuthProvider } from './Contexts/AuthContext.tsx'
 // import ProtectedRoute from './Components/ProtectedRoute.tsx'
 import { AgendaProvider } from './Contexts/AgendaContext.tsx'
+import ProtectedRoute from './Components/ProtectedRoute.tsx'
 
 
 
@@ -14,9 +15,9 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: 
-  
+  <ProtectedRoute>
     <App />
-   
+   </ProtectedRoute>
     ,
     children: [
       {
