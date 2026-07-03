@@ -8,10 +8,20 @@ import type { CalendarTask } from "../../types"
 type TaskIcon = CalendarTask["icon"]
 type RecurrenceType = CalendarTask["recurrence"]
 
+export type NewCalendarTask = {
+  date: string
+  description: string
+  icon: TaskIcon
+  reminderTime: string | null
+  recurrence: RecurrenceType
+}
+
 type AddTaskToDateProps = {
   selectedDate: Date
   onClose: () => void
-  onAddTask: (task: CalendarTask) => void
+  onAddTask: (task: NewCalendarTask) => Promise<boolean> | boolean
+  isSubmitting?: boolean
+  errorMessage?: string | null
 }
 
 const iconOptions: {
@@ -72,9 +82,12 @@ const AddTaskToDate = ({
   selectedDate,
   onClose,
   onAddTask,
+  isSubmitting = false,
+  errorMessage = null,
 }: AddTaskToDateProps) => {
   const [description, setDescription] = useState("")
   const [selectedIcon, setSelectedIcon] = useState<TaskIcon>("reminder")
+  const [reminderTime, setReminderTime] = useState("09:00")
   const [recurrence, setRecurrence] = useState<RecurrenceType>("none")
 
   const formattedDate = selectedDate.toLocaleDateString("fr-CA", {
@@ -84,22 +97,24 @@ const AddTaskToDate = ({
     day: "numeric",
   })
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
     const trimmedDescription = description.trim()
 
-    if (!trimmedDescription) return
+    if (!trimmedDescription || isSubmitting) return
 
-    onAddTask({
-      id: crypto.randomUUID(),
+    const wasAdded = await onAddTask({
       date: formatDateKey(selectedDate),
       description: trimmedDescription,
       icon: selectedIcon,
+      reminderTime: reminderTime || null,
       recurrence,
     })
 
-    onClose()
+    if (wasAdded) {
+      onClose()
+    }
   }
 
   return (
@@ -122,6 +137,12 @@ const AddTaskToDate = ({
           {formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}
         </p>
       </div>
+
+      {errorMessage && (
+        <p className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+          {errorMessage}
+        </p>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
@@ -175,6 +196,23 @@ const AddTaskToDate = ({
         </div>
 
         <div>
+          <label
+            htmlFor="reminder-time"
+            className="mb-2 block text-sm font-semibold text-gray-700"
+          >
+            Heure du rappel
+          </label>
+
+          <input
+            id="reminder-time"
+            type="time"
+            value={reminderTime}
+            onChange={(event) => setReminderTime(event.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-secondary"
+          />
+        </div>
+
+        <div>
           <p className="mb-2 text-sm font-semibold text-gray-700">
             Récurrence
           </p>
@@ -213,9 +251,9 @@ const AddTaskToDate = ({
           <button
             type="submit"
             className="rounded-lg bg-secondary px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-            disabled={!description.trim()}
+            disabled={!description.trim() || isSubmitting}
           >
-            Ajouter
+            {isSubmitting ? "Ajout..." : "Ajouter"}
           </button>
         </div>
       </form>

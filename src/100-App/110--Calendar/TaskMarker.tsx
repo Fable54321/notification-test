@@ -37,8 +37,8 @@ const TaskMarker = ({ icon, className = "h-4 w-4" }: TaskMarkerProps) => {
     <MarkerIcon
       aria-hidden="true"
       className={`${markerColorMap[icon]} ${className}`}
-      fill="none"
-      strokeWidth={3}
+      fill="currentColor"
+      strokeWidth={0}
     />
   )
 }

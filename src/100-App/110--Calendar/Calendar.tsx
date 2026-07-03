@@ -1,11 +1,25 @@
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { CalendarDays, ChevronLeft, ChevronRight, Plus } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import whiteFlower from "../../assets/flower-alt.png"
-import greenFlower from "../../assets/flower_no_circle_transparent - Copy.png"
-import AddTaskToDate from "./AddTaskToDate"
-import TaskMarker from "./TaskMarker"
-import type { CalendarTask } from "../../types"
 import { useAgenda } from "../../Contexts/AgendaContext"
+import greenFlower from "../../assets/flower_no_circle_transparent - Copy.png"
+import whiteFlower from "../../assets/flower-alt.png"
+import AddTaskToDate, { type NewCalendarTask } from "./AddTaskToDate"
+import AgendaNotificationControl from "./AgendaNotificationControl"
+import TaskMarker from "./TaskMarker"
+
+type CalendarDayTask = {
+  id: string
+  description: string
+  icon: NewCalendarTask["icon"]
+}
+
+const formatDateKey = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+
+  return `${year}-${month}-${day}`
+}
 
 const Calendar = () => {
   const today = new Date()
@@ -13,25 +27,28 @@ const Calendar = () => {
   const [displayedDate, setDisplayedDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1),
   )
-
-  const { tasks: agendaTasks, fetchAgendaMonth } = useAgenda()
-
-  useEffect(() => {
-    fetchAgendaMonth(displayedDate.getFullYear(), displayedDate.getMonth())
-  }, [displayedDate])
-
-
-  useEffect(() => {console.log(agendaTasks)},[agendaTasks])
-
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+
+  const {
+    agendaError,
+    clearAgendaError,
+    createTask,
+    creatingTask,
+    fetchAgendaMonth,
+    getOccurrencesForDate,
+    loadingMonth,
+    tasks: agendaTasks,
+  } = useAgenda()
 
   const currentMonth = displayedDate.getMonth()
   const currentYear = displayedDate.getFullYear()
 
-  const weekDays = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+  useEffect(() => {
+    fetchAgendaMonth(currentYear, currentMonth + 1)
+  }, [currentMonth, currentYear, fetchAgendaMonth])
 
-  const [tasks, setTasks] = useState<CalendarTask[]>([])
+  const weekDays = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
 
   const monthLabel = displayedDate.toLocaleString("fr-CA", {
     month: "long",
@@ -56,38 +73,61 @@ const Calendar = () => {
   const handleDateClick = (date: Date | null) => {
     if (!date) return
 
+    clearAgendaError()
     setSelectedDate(date)
-    setIsAddTaskOpen(true)
+    setIsAddTaskOpen(false)
   }
 
   const closeAddTask = () => {
     setIsAddTaskOpen(false)
+  }
+
+  const closeSelectedDate = () => {
+    setIsAddTaskOpen(false)
     setSelectedDate(null)
   }
 
-  const formatDateKey = (date: Date) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
+  const getTasksForDate = (dateKey: string): CalendarDayTask[] => {
+    const occurrenceTasksForDate = getOccurrencesForDate(dateKey).map(
+      (occurrence) => ({
+        id: `occurrence-${occurrence.id}`,
+        description: occurrence.task_description,
+        icon: occurrence.task_icon,
+      }),
+    )
 
-  return `${year}-${month}-${day}`
-}
+    const directTasksForDate = agendaTasks
+      .filter((task) => task.start_date === dateKey)
+      .map((task) => ({
+        id: `task-${task.id}`,
+        description: task.task_description,
+        icon: task.task_icon,
+      }))
 
-const handleAddTask = (task: CalendarTask) => {
-  setTasks((currentTasks) => [...currentTasks, task])
-}
+    return occurrenceTasksForDate.length > 0
+      ? occurrenceTasksForDate
+      : directTasksForDate
+  }
+
+  const handleAddTask = async (task: NewCalendarTask) => {
+    const createdTask = await createTask({
+      task_description: task.description,
+      task_icon: task.icon,
+      start_date: task.date,
+      reminder_time: task.reminderTime,
+      recurrence_type: task.recurrence,
+      recurrence_interval: 1,
+      recurrence_end_date: null,
+    })
+
+    return createdTask !== null
+  }
 
   const calendarDays = useMemo(() => {
-    const daysInMonth = new Date(
-      currentYear,
-      currentMonth + 1,
-      0,
-    ).getDate()
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
 
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1)
-
     const emptyDaysBeforeMonth = (firstDayOfMonth.getDay() + 6) % 7
-
     const emptyDays = Array.from({ length: emptyDaysBeforeMonth }, () => null)
 
     const monthDays = Array.from(
@@ -96,10 +136,7 @@ const handleAddTask = (task: CalendarTask) => {
     )
 
     const totalCellsBeforeEndPadding = emptyDays.length + monthDays.length
-
-    const emptyDaysAfterMonth =
-      (7 - (totalCellsBeforeEndPadding % 7)) % 7
-
+    const emptyDaysAfterMonth = (7 - (totalCellsBeforeEndPadding % 7)) % 7
     const endEmptyDays = Array.from({ length: emptyDaysAfterMonth }, () => null)
 
     return [...emptyDays, ...monthDays, ...endEmptyDays]
@@ -108,10 +145,86 @@ const handleAddTask = (task: CalendarTask) => {
   if (isAddTaskOpen && selectedDate) {
     return (
       <AddTaskToDate
+        errorMessage={agendaError}
+        isSubmitting={creatingTask}
         onAddTask={handleAddTask}
         selectedDate={selectedDate}
         onClose={closeAddTask}
       />
+    )
+  }
+
+  if (selectedDate) {
+    const selectedDateKey = formatDateKey(selectedDate)
+    const selectedDateTasks = getTasksForDate(selectedDateKey)
+    const formattedDate = selectedDate.toLocaleDateString("fr-CA", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+
+    return (
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <button
+          type="button"
+          onClick={closeSelectedDate}
+          className="mb-4 text-sm font-semibold text-secondary underline"
+        >
+          Retour
+        </button>
+
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-secondary">
+              <CalendarDays className="h-5 w-5" />
+              <h2 className="text-xl font-bold">Tâches du jour</h2>
+            </div>
+
+            <p className="text-sm text-gray-600">
+              {formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              clearAgendaError()
+              setIsAddTaskOpen(true)
+            }}
+            className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-bold text-white"
+          >
+            <Plus className="h-4 w-4" />
+            Ajouter
+          </button>
+        </div>
+
+        {agendaError && (
+          <p className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+            {agendaError}
+          </p>
+        )}
+
+        {selectedDateTasks.length > 0 ? (
+          <div className="space-y-2">
+            {selectedDateTasks.map((task) => (
+              <div
+                key={task.id}
+                className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-3"
+              >
+                <TaskMarker icon={task.icon} className="h-5 w-5 shrink-0" />
+                <p className="text-sm font-semibold text-gray-800">
+                  {task.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-lg border border-dashed border-gray-300 px-3 py-6 text-center text-sm font-semibold text-gray-500">
+            Aucune tâche pour cette date.
+          </p>
+        )}
+      </div>
     )
   }
 
@@ -147,6 +260,20 @@ const handleAddTask = (task: CalendarTask) => {
         </button>
       </div>
 
+      <AgendaNotificationControl />
+
+      {agendaError && (
+        <p className="col-span-7 mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+          {agendaError}
+        </p>
+      )}
+
+      {loadingMonth && (
+        <p className="col-span-7 mb-3 text-sm font-semibold text-gray-600">
+          Chargement...
+        </p>
+      )}
+
       {weekDays.map((day) => (
         <div
           key={day}
@@ -162,50 +289,42 @@ const handleAddTask = (task: CalendarTask) => {
         </div>
       ))}
 
-     {calendarDays.map((date, index) => {
-  const dateKey = date ? formatDateKey(date) : null
+      {calendarDays.map((date, index) => {
+        const dateKey = date ? formatDateKey(date) : null
+        const tasksForDate = dateKey ? getTasksForDate(dateKey) : []
 
-  const tasksForDate = dateKey
-    ? tasks.filter((task) => task.date === dateKey)
-    : []
+        return (
+          <button
+            key={index}
+            type="button"
+            disabled={!date}
+            onClick={() => handleDateClick(date)}
+            className={`flex min-h-40 flex-col items-start justify-start border border-gray-300 p-2 ${
+              date ? "bg-white hover:bg-primary/10" : "cursor-default bg-gray-50"
+            }`}
+          >
+            {date && (
+              <>
+                <p className="mb-2 font-semibold">{date.getDate()}</p>
 
-  return (
-    <button
-      key={index}
-      type="button"
-      disabled={!date}
-      onClick={() => handleDateClick(date)}
-      className={`flex min-h-40 flex-col items-start justify-start border border-gray-300 p-2 ${
-        date
-          ? "bg-white hover:bg-primary/10"
-          : "cursor-default bg-gray-50"
-      }`}
-    >
-      {date && (
-        <>
-          <p className="mb-2 font-semibold">{date.getDate()}</p>
+                <div className="flex flex-wrap gap-1">
+                  {tasksForDate.slice(0, 4).map((task) => (
+                    <span key={task.id} title={task.description}>
+                      <TaskMarker icon={task.icon} className="h-5 w-5" />
+                    </span>
+                  ))}
 
-          <div className="flex flex-wrap gap-1">
-            {tasksForDate.slice(0, 4).map((task) => (
-              <span
-                key={task.id}
-                title="Tâche planifiée"
-              >
-                <TaskMarker icon={task.icon} className="h-5 w-5" />
-              </span>
-            ))}
-
-            {tasksForDate.length > 4 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-200 px-1 text-xs font-bold text-gray-700">
-                +{tasksForDate.length - 4}
-              </span>
+                  {tasksForDate.length > 4 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-200 px-1 text-xs font-bold text-gray-700">
+                      +{tasksForDate.length - 4}
+                    </span>
+                  )}
+                </div>
+              </>
             )}
-          </div>
-        </>
-      )}
-    </button>
-  )
-})}
+          </button>
+        )
+      })}
 
       <img
         src={greenFlower}
