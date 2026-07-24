@@ -1,4 +1,10 @@
-import { CalendarDays, ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+} from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useAgenda } from "../../Contexts/AgendaContext"
 import greenFlower from "../../assets/flower_no_circle_transparent - Copy.png"
@@ -10,6 +16,7 @@ import Spinner from "../../Components/Spinner"
 
 type CalendarDayTask = {
   id: string
+  taskId: number
   description: string
   icon: NewCalendarTask["icon"]
 }
@@ -36,6 +43,8 @@ const Calendar = () => {
     clearAgendaError,
     createTask,
     creatingTask,
+    deleteTask,
+    deletingTaskId,
     fetchAgendaMonth,
     getOccurrencesForDate,
     loadingMonth,
@@ -92,6 +101,7 @@ const Calendar = () => {
     const occurrenceTasksForDate = getOccurrencesForDate(dateKey).map(
       (occurrence) => ({
         id: `occurrence-${occurrence.id}`,
+        taskId: occurrence.task_id,
         description: occurrence.task_description,
         icon: occurrence.task_icon,
       }),
@@ -101,6 +111,7 @@ const Calendar = () => {
       .filter((task) => task.start_date === dateKey)
       .map((task) => ({
         id: `task-${task.id}`,
+        taskId: task.id,
         description: task.task_description,
         icon: task.task_icon,
       }))
@@ -122,6 +133,16 @@ const Calendar = () => {
     })
 
     return createdTask !== null
+  }
+
+  const handleDeleteTask = async (task: CalendarDayTask) => {
+    const shouldDelete = window.confirm(
+      `Supprimer « ${task.description} » et tous ses rappels?`,
+    )
+
+    if (!shouldDelete) return
+
+    await deleteTask(task.taskId)
   }
 
   const calendarDays = useMemo(() => {
@@ -214,9 +235,19 @@ const Calendar = () => {
                 className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-3"
               >
                 <TaskMarker icon={task.icon} className="h-5 w-5 shrink-0" />
-                <p className="text-sm font-semibold text-gray-800">
+                <p className="min-w-0 flex-1 text-sm font-semibold text-gray-800">
                   {task.description}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteTask(task)}
+                  disabled={deletingTaskId !== null}
+                  aria-label={`Supprimer ${task.description}`}
+                  title="Supprimer la tâche"
+                  className="shrink-0 rounded-md p-2 text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Trash2 className="h-6 w-6" />
+                </button>
               </div>
             ))}
           </div>
