@@ -169,7 +169,7 @@ const Calendar = () => {
         <button
           type="button"
           onClick={closeSelectedDate}
-          className="mb-4 text-sm font-semibold text-secondary underline"
+          className="mb-4  font-semibold text-secondary underline"
         >
           Retour
         </button>
@@ -239,8 +239,8 @@ const Calendar = () => {
           <ChevronLeft className="h-6 w-6" />
         </button>
 
-        <div className="text-center">
-          <h2 className="text-xl font-bold">{formattedMonthLabel}</h2>
+        <div className="text-center mt-2">
+          <h2 className="text-2xl font-primary font-bold">{formattedMonthLabel}</h2>
 
           <button
             type="button"

@@ -122,7 +122,7 @@ const AddTaskToDate = ({
       <button
         type="button"
         onClick={onClose}
-        className="mb-4 text-sm font-semibold text-secondary underline"
+        className="mb-4 font-semibold text-secondary underline"
       >
         Retour
       </button>
