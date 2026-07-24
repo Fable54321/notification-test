@@ -6,6 +6,7 @@ import whiteFlower from "../../assets/flower-alt.png"
 import AddTaskToDate, { type NewCalendarTask } from "./AddTaskToDate"
 import AgendaNotificationControl from "./AgendaNotificationControl"
 import TaskMarker from "./TaskMarker"
+import Spinner from "../../Components/Spinner"
 
 type CalendarDayTask = {
   id: string
@@ -229,6 +230,10 @@ const Calendar = () => {
   }
 
   return (
+    <>
+
+      
+
     <div className="relative grid grid-cols-7 overflow-hidden">
       <div className="col-span-7 mb-4 flex items-center justify-between">
         <button
@@ -262,19 +267,17 @@ const Calendar = () => {
 
       <AgendaNotificationControl />
 
+      
+
       {agendaError && (
         <p className="col-span-7 mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
           {agendaError}
         </p>
       )}
 
-      {loadingMonth && (
-        <p className="col-span-7 mb-3 text-sm font-semibold text-gray-600">
-          Chargement...
-        </p>
-      )}
+   
 
-      {weekDays.map((day) => (
+      {!loadingMonth && weekDays.map((day) => (
         <div
           key={day}
           className="relative overflow-hidden border border-gray-300 bg-secondary p-2 font-bold text-white"
@@ -289,7 +292,10 @@ const Calendar = () => {
         </div>
       ))}
 
-      {calendarDays.map((date, index) => {
+
+
+
+      {!loadingMonth && calendarDays.map((date, index) => {
         const dateKey = date ? formatDateKey(date) : null
         const tasksForDate = dateKey ? getTasksForDate(dateKey) : []
 
@@ -326,12 +332,24 @@ const Calendar = () => {
         )
       })}
 
-      <img
+   
+{!loadingMonth && <img
         src={greenFlower}
         alt="green-flower"
         className="pointer-events-none absolute sm:bottom-0 bottom-1 sm:right-0 sm:left-auto sm:translate-0 left-1/2 -translate-x-1/2 sm:w-100 w-60 sm:-rotate-25 opacity-30"
-      />
+      />}
+      
     </div>
+
+          {loadingMonth && (
+         
+      <Spinner />
+  
+      )}
+
+     
+
+    </>
   )
 }
 
